@@ -7,15 +7,21 @@ const nodemailer = require('nodemailer');
 const hbs = require('nodemailer-express-handlebars');
 const Handlebars = require('handlebars');
 const lodash = require('lodash');
+const {createAuditLog} = require('./userAudit');
 
 exports.signup = (req, res) => {
     const user = new User(req.body);
     user.save((err, user) => {
         if (err) {
+            createAuditLog(null, req.body.email, 'SIGNUP', req, {error: errorHandler(err)}, 'FAILURE', errorHandler(err));
             return res.status(400).json({error: errorHandler(err)});
         }
         user.salt = undefined;
         user.hash_password = undefined;
+
+        // Log successful signup
+        createAuditLog(user._id, user.email, 'SIGNUP', req, {role: user.role});
+
         res.json({
             user
         });
@@ -69,16 +75,19 @@ exports.signin = (req, res) => {
     const {email, password} = req.body;
     User.findOne({email}, (err, user) => {
         if (err || !user) {
+            createAuditLog(null, email, 'LOGIN_FAILED', req, {reason: 'User does not exist'}, 'FAILURE', 'User does not exist');
             return res.status(400).json({error: 'User does not exist!'});
         }
         //authenticate the user
         if (!user.auth(password)) {
+            createAuditLog(user._id, user.email, 'LOGIN_FAILED', req, {reason: 'Incorrect password'}, 'FAILURE', 'Incorrect credentials');
             return res.status(401).json({
                 error: 'Incorrect credentials!'
             });
         }
         //authenticate the user
         if (user.state === '0') {
+            createAuditLog(user._id, user.email, 'LOGIN_FAILED', req, {reason: 'Inactive user'}, 'FAILURE', 'Inactive User. Access denied');
             return res.status(401).json({
                 error: "Inactive User. Access denied!"
             });
@@ -88,6 +97,10 @@ exports.signin = (req, res) => {
         const token = jwt.sign({_id: user._id}, process.env.JWT_SECRET);
         //add to cookie with expiry date
         res.cookie('t', token, {expire: new Date() + 9999});
+
+        // Log successful login
+        createAuditLog(user._id, user.email, 'LOGIN', req, {role: user.role});
+
         //return user and token to the front-end client
         const {_id, name, email, role} = user;
         return res.json({token, user: {_id, name, email, role}});
@@ -95,6 +108,14 @@ exports.signin = (req, res) => {
 };
 
 exports.signout = (req, res) => {
+    // Log logout if user is authenticated
+    if (req.auth && req.auth._id) {
+        User.findById(req.auth._id, (err, user) => {
+            if (!err && user) {
+                createAuditLog(user._id, user.email, 'LOGOUT', req);
+            }
+        });
+    }
     res.clearCookie('t');
     res.status(200).json({message: 'Signout success!'})
 };
@@ -170,6 +191,12 @@ exports.changeState = (req, res) => {
             })
         }
 
+        // Log state change
+        createAuditLog(user._id, user.email, 'STATE_CHANGE', req, {
+            newState: req.body.state,
+            changedBy: req.auth ? req.auth._id : 'system'
+        });
+
         user.hashed_password = undefined;
         user.salt = undefined;
 
@@ -227,6 +254,7 @@ exports.forgotPassword = (req, res) => {
 
     User.findOne({email}, (err, user) => {
         if (err || !user) {
+            createAuditLog(null, email, 'PASSWORD_RESET_REQUEST', req, {reason: 'User not found'}, 'FAILURE', 'User with this email does not exist');
             return res.status(400).json({error: "User with this email does not exists!"});
         }
 
@@ -275,6 +303,8 @@ exports.forgotPassword = (req, res) => {
                         return res.json({error: "Email not found!"});
                     } else {
                         console.log("Email sent successfully");
+                        // Log successful password reset request
+                        createAuditLog(user._id, user.email, 'PASSWORD_RESET_REQUEST', req);
                         return res.json({message: 'Email is sent to the email address!'});
                     }
                 });
@@ -302,8 +332,11 @@ exports.resetPasswordByLink = (req, res) => {
                user = lodash.extend(user, obj);
                user.save((err, result) => {
                    if (err){
+                       createAuditLog(user._id, user.email, 'PASSWORD_RESET_COMPLETE', req, {}, 'FAILURE', 'Reset password error');
                        return res.status(400).json({error : "reset password error"})
                    }else{
+                       // Log successful password reset completion
+                       createAuditLog(user._id, user.email, 'PASSWORD_RESET_COMPLETE', req);
                        return res.status(200).json({message: "Your password is changed!"})
                    }
                })

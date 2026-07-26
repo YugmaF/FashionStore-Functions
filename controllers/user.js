@@ -2,6 +2,7 @@ const User = require('../models/users');
 const generator = require('generate-password');
 const nodemailer = require('nodemailer');
 const hbs = require('nodemailer-express-handlebars');
+const {createAuditLog} = require('./userAudit');
 
 exports.getUserById = (req, res, next, id) => {
     User.findById(id).populate('product').exec((err, user) => {
@@ -39,6 +40,8 @@ exports.removeItemById = (req, res) => {
         function (err) {
             //if error send error or success
             if (err) return res.send(500, {error: err});
+            // Log cart item removal
+            createAuditLog(req.profile._id, req.profile.email, 'CART_REMOVE', req, {productId: req.body._id});
             return res.send(200, {success: 'Successfully Removed.'});
         })
 };
@@ -51,6 +54,8 @@ exports.removeWishListItem = (req, res) => {
 
         function (err) {
             if (err) return res.send(500, {error: err});
+            // Log wishlist item removal
+            createAuditLog(req.profile._id, req.profile.email, 'WISHLIST_REMOVE', req, {productId: req.body._id});
             return res.send(200, {success: 'Successfully Removed.'});
         })
 };
@@ -95,6 +100,11 @@ exports.resetPassword = (req, res) => {
                 error:errorHandler(err)
             });
         }
+        // Log admin password reset
+        createAuditLog(user._id, user.email, 'PASSWORD_CHANGE', req, {
+            resetBy: req.auth ? req.auth._id : 'admin',
+            resetType: 'admin-initiated'
+        });
         res.json(data);
         let transporter = nodemailer.createTransport({
             service: 'gmail',
@@ -139,15 +149,19 @@ exports.resetPassword = (req, res) => {
 //method to update users using requests
 exports.update = (req, res) => {
     let updateSet = {$set: {}, $addToSet: {}};  //add to set used to not to replace existing cart items
+    let auditMetadata = {updatedFields: []};
 
     if (req.body.name != null) {
         updateSet.$set.name = req.body.name //update name
+        auditMetadata.updatedFields.push('name');
     }
     if (req.body.password != null) {
         updateSet.$set.password = req.body.password //update password
+        auditMetadata.updatedFields.push('password');
     }
     if (req.body.email != null) {
         updateSet.$set.email = req.body.email   //update email
+        auditMetadata.updatedFields.push('email');
     }
     if (req.body.address1 != null) {
         //update address details
@@ -156,10 +170,13 @@ exports.update = (req, res) => {
         updateSet.$set.town = req.body.town;
         updateSet.$set.postal_code = req.body.postal_code;
         updateSet.$set.mobile = req.body.mobile;
+        auditMetadata.updatedFields.push('address');
     }
     //adding products to the shopping cart
     if (req.body.product != null) {
         updateSet.$addToSet.product = req.body.product  //update cart products
+        auditMetadata.cartAction = 'add';
+        auditMetadata.productId = req.body.product;
     }
 
     //update user doc using user id
@@ -168,6 +185,15 @@ exports.update = (req, res) => {
             return res.status(400).json({
                 error: 'Unauthorized Action!'
             })
+        }
+
+        // Log profile update
+        if (auditMetadata.updatedFields.length > 0) {
+            createAuditLog(user._id, user.email, 'PROFILE_UPDATE', req, auditMetadata);
+        }
+        // Log cart addition separately
+        if (req.body.product != null) {
+            createAuditLog(user._id, user.email, 'CART_ADD', req, {productId: req.body.product});
         }
 
         user.hashed_password = undefined;
@@ -189,6 +215,11 @@ exports.updateWishList = (req, res) => {
             return res.status(400).json({
                 error: 'Unauthorized Action!'
             })
+        }
+
+        // Log wishlist addition
+        if (req.body.product != null) {
+            createAuditLog(user._id, user.email, 'WISHLIST_ADD', req, {productId: req.body.product});
         }
 
         user.hashed_password = undefined;
@@ -240,6 +271,12 @@ exports.addOrderToUserHistory = (req, res, next) => {
                     error: 'Unable to update user purchase history'
                 })
             }
+            // Log order placement
+            createAuditLog(req.profile._id, req.profile.email, 'ORDER_PLACED', req, {
+                transactionId: req.body.order.transaction_id,
+                amount: req.body.order.amount,
+                productCount: req.body.order.products.length
+            });
             next();
         }
     );
