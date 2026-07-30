@@ -46,9 +46,47 @@ const productSchema = new mongoose.Schema({
         required: false,
         type: Boolean
     },
-    discount:{
+    discount: {
         type: Number,
         default: 0.00
+    },
+    isPromotional: {
+        type: Boolean,
+        default: false
+    },
+    promoType: {
+        type: String,
+        enum: ['discount_percentage', 'fixed_amount', 'buy_one_get_one', 'bundle_deal', 'flash_sale', 'seasonal_sale', 'clearance'],
+        default: null
+    },
+    promoStartDate: {
+        type: Date,
+        default: null
+    },
+    promoEndDate: {
+        type: Date,
+        default: null
+    },
+    promoPrice: {
+        type: Number,
+        default: null
+    },
+    promoStockLimit: {
+        type: Number,
+        default: null
+    },
+    promoSold: {
+        type: Number,
+        default: 0
+    },
+    promoMinQuantity: {
+        type: Number,
+        default: 1
+    },
+    promoDescription: {
+        type: String,
+        maxLength: 500,
+        default: ''
     },
     rating: [{
         type: Number,
@@ -71,5 +109,31 @@ const productSchema = new mongoose.Schema({
         required: false
     }]
 }, {timestamps: true});
+
+// Virtual property to check if promotion is currently active
+productSchema.virtual('isPromotionActive').get(function() {
+    if (!this.isPromotional) return false;
+    const now = new Date();
+    const startDate = this.promoStartDate ? new Date(this.promoStartDate) : null;
+    const endDate = this.promoEndDate ? new Date(this.promoEndDate) : null;
+    
+    if (!startDate || !endDate) return false;
+    if (startDate > now || endDate < now) return false;
+    if (this.promoStockLimit && this.promoSold >= this.promoStockLimit) return false;
+    
+    return true;
+});
+
+// Virtual property to get the effective price (promo price if active, otherwise regular price)
+productSchema.virtual('effectivePrice').get(function() {
+    if (this.isPromotionActive) {
+        return this.promoPrice || this.price;
+    }
+    return this.price;
+});
+
+// Ensure virtuals are included in JSON output
+productSchema.set('toJSON', { virtuals: true });
+productSchema.set('toObject', { virtuals: true });
 
 module.exports = mongoose.model("Product", productSchema);
