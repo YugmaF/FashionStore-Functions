@@ -50,6 +50,28 @@ const productSchema = new mongoose.Schema({
         type: Number,
         default: 0.00
     },
+    isPromotionalOffer: {
+        type: Boolean,
+        default: false
+    },
+    promotionalPrice: {
+        type: Number,
+        required: false
+    },
+    promotionalStartDate: {
+        type: Date,
+        required: false
+    },
+    promotionalEndDate: {
+        type: Date,
+        required: false
+    },
+    promotionalDescription: {
+        type: String,
+        trim: true,
+        maxLength: 500,
+        required: false
+    },
     rating: [{
         type: Number,
         required: false

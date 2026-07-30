@@ -36,13 +36,31 @@ exports.create = (req, res) => {
         }
 
         // Check for all the variables
-        const {name, description, category, price, currency, quantity, takeInMethod} = fields;
+        const {name, description, category, price, currency, quantity, takeInMethod, isPromotionalOffer, promotionalPrice, promotionalStartDate, promotionalEndDate} = fields;
 
         // Validating the variables
         if(!name || !description || !category || !price || !currency || !quantity || !takeInMethod){
             return res.status(400).json({
                 error: "Complete all fields!"
             });
+        }
+
+        // Validate promotional offer fields
+        if(isPromotionalOffer === 'true' || isPromotionalOffer === true){
+            if(!promotionalPrice || !promotionalStartDate || !promotionalEndDate){
+                return res.status(400).json({
+                    error: "Promotional offer requires price, start date, and end date!"
+                });
+            }
+
+            const start = new Date(promotionalStartDate);
+            const end = new Date(promotionalEndDate);
+
+            if(start >= end){
+                return res.status(400).json({
+                    error: "Promotional end date must be after start date!"
+                });
+            }
         }
 
         let product = new Product(fields);
@@ -96,6 +114,25 @@ exports.update = (req, res) => {
 
         // Accessing the existing product
         let product = req.product;
+
+        // Validate promotional offer fields if provided
+        const {isPromotionalOffer, promotionalPrice, promotionalStartDate, promotionalEndDate} = fields;
+        if(isPromotionalOffer === 'true' || isPromotionalOffer === true){
+            if(!promotionalPrice || !promotionalStartDate || !promotionalEndDate){
+                return res.status(400).json({
+                    error: "Promotional offer requires price, start date, and end date!"
+                });
+            }
+
+            const start = new Date(promotionalStartDate);
+            const end = new Date(promotionalEndDate);
+
+            if(start >= end){
+                return res.status(400).json({
+                    error: "Promotional end date must be after start date!"
+                });
+            }
+        }
 
         // Replace existing Product info
         product = lodash.extend(product, fields);
@@ -345,4 +382,26 @@ exports.searchProduct = (req, res) => {
             res.json(products);
         }).select('-image');
     }
+};
+
+//get active promotional products
+exports.getActivePromotionalProducts = (req, res) => {
+    const now = new Date();
+    
+    Product.find({
+        isPromotionalOffer: true,
+        promotionalStartDate: {$lte: now},
+        promotionalEndDate: {$gte: now}
+    })
+    .select("-image")
+    .populate('category', '_id name')
+    .exec((err, products) => {
+        if(err){
+            return res.status(400).json({
+                error: 'Promotional products not found'
+            });
+        }
+
+        res.json(products);
+    });
 };
