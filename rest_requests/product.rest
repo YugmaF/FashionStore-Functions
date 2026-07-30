@@ -57,3 +57,82 @@ POST http://localhost:8000/api/products/by/search
 GET http://localhost:8000/api/product/image/5e662c41f4bb243864cb0256
 
 ###
+
+###get promotional products
+GET http://localhost:8000/api/products/promotional
+
+###
+
+###create product with promotional offer
+POST http://localhost:8000/api/product/create/5e6275c5115b7c085c399357
+Content-Type: multipart/form-data; boundary=----WebKitFormBoundary7MA4YWxkTrZu0gW
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJfaWQiOiI1ZTYyNzVjNTExNWI3YzA4NWMzOTkzNTciLCJpYXQiOjE1ODc4MDc2NzV9.CRlzxtALQNgjxHGn7HByAKRjfY-zdOSRjA-5EagvUUQ
+
+------WebKitFormBoundary7MA4YWxkTrZu0gW
+Content-Disposition: form-data; name="name"
+
+Promotional Product
+------WebKitFormBoundary7MA4YWxkTrZu0gW
+Content-Disposition: form-data; name="description"
+
+This is a promotional product
+------WebKitFormBoundary7MA4YWxkTrZu0gW
+Content-Disposition: form-data; name="category"
+
+5e6275c5115b7c085c399357
+------WebKitFormBoundary7MA4YWxkTrZu0gW
+Content-Disposition: form-data; name="price"
+
+100
+------WebKitFormBoundary7MA4YWxkTrZu0gW
+Content-Disposition: form-data; name="currency"
+
+USD
+------WebKitFormBoundary7MA4YWxkTrZu0gW
+Content-Disposition: form-data; name="quantity"
+
+50
+------WebKitFormBoundary7MA4YWxkTrZu0gW
+Content-Disposition: form-data; name="takeInMethod"
+
+true
+------WebKitFormBoundary7MA4YWxkTrZu0gW
+Content-Disposition: form-data; name="isPromotional"
+
+true
+------WebKitFormBoundary7MA4YWxkTrZu0gW
+Content-Disposition: form-data; name="promoType"
+
+discount_percentage
+------WebKitFormBoundary7MA4YWxkTrZu0gW
+Content-Disposition: form-data; name="promoStartDate"
+
+2024-01-01T00:00:00.000Z
+------WebKitFormBoundary7MA4YWxkTrZu0gW
+Content-Disposition: form-data; name="promoEndDate"
+
+2024-12-31T23:59:59.000Z
+------WebKitFormBoundary7MA4YWxkTrZu0gW
+Content-Disposition: form-data; name="promoPrice"
+
+75
+------WebKitFormBoundary7MA4YWxkTrZu0gW
+Content-Disposition: form-data; name="promoStockLimit"
+
+100
+------WebKitFormBoundary7MA4YWxkTrZu0gW
+Content-Disposition: form-data; name="promoMinQuantity"
+
+1
+------WebKitFormBoundary7MA4YWxkTrZu0gW
+Content-Disposition: form-data; name="promoDescription"
+
+Special 25% discount for limited time!
+------WebKitFormBoundary7MA4YWxkTrZu0gW
+Content-Disposition: form-data; name="image"; filename="product.jpg"
+Content-Type: image/jpeg
+
+<./product.jpg>
+------WebKitFormBoundary7MA4YWxkTrZu0gW--
+
+###

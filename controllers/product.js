@@ -36,13 +36,37 @@ exports.create = (req, res) => {
         }
 
         // Check for all the variables
-        const {name, description, category, price, currency, quantity, takeInMethod} = fields;
+        const {name, description, category, price, currency, quantity, takeInMethod, isPromotional, promoType, promoStartDate, promoEndDate, promoPrice, promoStockLimit, promoMinQuantity, promoDescription} = fields;
 
         // Validating the variables
         if(!name || !description || !category || !price || !currency || !quantity || !takeInMethod){
             return res.status(400).json({
                 error: "Complete all fields!"
             });
+        }
+
+        // Validate promotional offer fields if isPromotional is true
+        if(isPromotional === 'true' || isPromotional === true){
+            if(!promoType){
+                return res.status(400).json({
+                    error: "Promotion type is required for promotional products"
+                });
+            }
+            if(!promoStartDate || !promoEndDate){
+                return res.status(400).json({
+                    error: "Promotion start and end dates are required for promotional products"
+                });
+            }
+            if(new Date(promoStartDate) >= new Date(promoEndDate)){
+                return res.status(400).json({
+                    error: "Promotion end date must be after start date"
+                });
+            }
+            if((promoType === 'discount_percentage' || promoType === 'fixed_amount') && !promoPrice){
+                return res.status(400).json({
+                    error: "Promotional price is required for this promotion type"
+                });
+            }
         }
 
         let product = new Product(fields);
@@ -96,6 +120,30 @@ exports.update = (req, res) => {
 
         // Accessing the existing product
         let product = req.product;
+
+        // Validate promotional offer fields if isPromotional is true
+        if(fields.isPromotional === 'true' || fields.isPromotional === true){
+            if(!fields.promoType){
+                return res.status(400).json({
+                    error: "Promotion type is required for promotional products"
+                });
+            }
+            if(!fields.promoStartDate || !fields.promoEndDate){
+                return res.status(400).json({
+                    error: "Promotion start and end dates are required for promotional products"
+                });
+            }
+            if(new Date(fields.promoStartDate) >= new Date(fields.promoEndDate)){
+                return res.status(400).json({
+                    error: "Promotion end date must be after start date"
+                });
+            }
+            if((fields.promoType === 'discount_percentage' || fields.promoType === 'fixed_amount') && !fields.promoPrice){
+                return res.status(400).json({
+                    error: "Promotional price is required for this promotion type"
+                });
+            }
+        }
 
         // Replace existing Product info
         product = lodash.extend(product, fields);
@@ -345,4 +393,33 @@ exports.searchProduct = (req, res) => {
             res.json(products);
         }).select('-image');
     }
+};
+
+//get promotional products
+exports.getPromotionalProducts = (req, res) => {
+    const now = new Date();
+    
+    Product.find({
+        isPromotional: true,
+        promoStartDate: {$lte: now},
+        promoEndDate: {$gte: now}
+    })
+    .select("-image")
+    .populate('category')
+    .exec((err, products) => {
+        if(err){
+            return res.status(400).json({
+                error: 'Promotional products not found'
+            });
+        }
+        
+        const activeProducts = products.filter(product => {
+            if(product.promoStockLimit && product.promoSold >= product.promoStockLimit){
+                return false;
+            }
+            return true;
+        });
+
+        res.json(activeProducts);
+    });
 };
