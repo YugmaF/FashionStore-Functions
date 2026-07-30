@@ -36,13 +36,36 @@ exports.create = (req, res) => {
         }
 
         // Check for all the variables
-        const {name, description, category, price, currency, quantity, takeInMethod} = fields;
+        const {name, description, category, price, currency, quantity, takeInMethod, isPromotional, promotionalPrice, promoType, promoStartDate, promoEndDate, promoDescription, promoCode} = fields;
 
-        // Validating the variables
+        // Validating the required variables
         if(!name || !description || !category || !price || !currency || !quantity || !takeInMethod){
             return res.status(400).json({
                 error: "Complete all fields!"
             });
+        }
+
+        // Validate promotional fields if promotional is enabled
+        if(isPromotional === 'true' || isPromotional === true){
+            if(!promotionalPrice || !promoType || !promoStartDate || !promoEndDate){
+                return res.status(400).json({
+                    error: "When promotional offer is enabled, please provide promotional price, type, start date, and end date"
+                });
+            }
+
+            // Validate that promotional price is less than original price
+            if(parseFloat(promotionalPrice) >= parseFloat(price)){
+                return res.status(400).json({
+                    error: "Promotional price must be less than the original price"
+                });
+            }
+
+            // Validate that end date is after start date
+            if(new Date(promoEndDate) <= new Date(promoStartDate)){
+                return res.status(400).json({
+                    error: "Promotional end date must be after the start date"
+                });
+            }
         }
 
         let product = new Product(fields);
@@ -295,6 +318,63 @@ exports.getImage = (req, res, next) => {
 
     next();
 
+};
+
+//get active promotional products
+exports.getPromotionalProducts = (req, res) => {
+    let limitTo = req.query.limitTo ? parseInt(req.query.limitTo):10;
+    const currentDate = new Date();
+
+    Product.find({
+        isPromotional: true,
+        promoStartDate: {$lte: currentDate},
+        promoEndDate: {$gte: currentDate}
+    })
+        .select("-image")
+        .populate('category')
+        .limit(limitTo)
+        .exec((err, data) => {
+            if(err){
+                res.status(400).json({
+                    error: 'Promotional products not found!'
+                });
+            }
+
+            res.json(data);
+        });
+};
+
+//check if promotion is active for a product
+exports.isPromotionActive = (req, res) => {
+    const product = req.product;
+    
+    if(!product.isPromotional){
+        return res.json({
+            isPromotionActive: false,
+            message: 'No promotion available for this product'
+        });
+    }
+
+    const currentDate = new Date();
+    const startDate = new Date(product.promoStartDate);
+    const endDate = new Date(product.promoEndDate);
+
+    if(currentDate >= startDate && currentDate <= endDate){
+        return res.json({
+            isPromotionActive: true,
+            promotionalPrice: product.promotionalPrice,
+            promoType: product.promoType,
+            promoDescription: product.promoDescription,
+            promoCode: product.promoCode,
+            promoEndDate: product.promoEndDate,
+            message: 'Promotion is currently active'
+        });
+    }
+
+    return res.json({
+        isPromotionActive: false,
+        message: currentDate < startDate ? 'Promotion has not started yet' : 'Promotion has ended'
+    });
 };
 
 //decrease product quantity
