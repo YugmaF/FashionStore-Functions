@@ -4,7 +4,7 @@ const {userSignupValidator} = require('../validators');
 
 //controller references
 const { create, getProductById, read, remove, update, addRating, addComment
-    , getAllProducts, getSimilarProduct, getProductCategories, getProductListBySearch, getImage, getProductsByCategory, searchProduct } = require("../controllers/product");
+    , getAllProducts, getSimilarProduct, getProductCategories, getProductListBySearch, getImage, getProductsByCategory, searchProduct, getActivePromotionalProducts } = require("../controllers/product");
 const { requiredSignin, isAuth, isAdmin, isStoreManager } = require('../controllers/auth');
 const { getUserById } = require("../controllers/user");
 //controller references
@@ -22,6 +22,7 @@ router.put('/product/addComment/:productId/:userId', requiredSignin, isAuth, add
 //search routes
 router.get('/products', getAllProducts);
 router.get('/products/search', searchProduct);
+router.get('/products/promotions', getActivePromotionalProducts);
 router.get('/products/similar/:productId', getSimilarProduct);
 router.get('/products/categories', getProductCategories);
 router.post("/products/by/search", getProductListBySearch);

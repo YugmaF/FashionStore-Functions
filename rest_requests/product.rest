@@ -57,3 +57,45 @@ POST http://localhost:8000/api/products/by/search
 GET http://localhost:8000/api/product/image/5e662c41f4bb243864cb0256
 
 ###
+
+###get active promotional products
+GET http://localhost:8000/api/products/promotions
+
+###
+
+###create product with promotional offer
+POST http://localhost:8000/api/product/create/:userId
+Content-Type: multipart/form-data
+Authorization: Bearer <token>
+
+{
+  "name": "Promotional Product",
+  "description": "Product with special offer",
+  "category": "categoryId",
+  "price": 100,
+  "currency": "USD",
+  "quantity": 50,
+  "takeInMethod": true,
+  "isPromotionalOffer": true,
+  "promotionalPrice": 75,
+  "promotionalStartDate": "2024-01-01T00:00:00Z",
+  "promotionalEndDate": "2024-01-31T23:59:59Z",
+  "promotionalDescription": "New Year Special - 25% off!"
+}
+
+###
+
+###update product with promotional offer
+PUT http://localhost:8000/api/product/:productId/:userId
+Content-Type: multipart/form-data
+Authorization: Bearer <token>
+
+{
+  "isPromotionalOffer": true,
+  "promotionalPrice": 75,
+  "promotionalStartDate": "2024-01-01T00:00:00Z",
+  "promotionalEndDate": "2024-01-31T23:59:59Z",
+  "promotionalDescription": "Extended offer!"
+}
+
+###
