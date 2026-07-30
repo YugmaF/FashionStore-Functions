@@ -50,6 +50,34 @@ const productSchema = new mongoose.Schema({
         type: Number,
         default: 0.00
     },
+    isPromo: {
+        type: Boolean,
+        default: false
+    },
+    promoPrice: {
+        type: Number,
+        trim: true
+    },
+    promoStartDate: {
+        type: Date
+    },
+    promoEndDate: {
+        type: Date
+    },
+    promoType: {
+        type: String,
+        enum: ['percentage_discount', 'fixed_price', 'buy_one_get_one', 'bundle'],
+        default: 'percentage_discount'
+    },
+    promoDescription: {
+        type: String,
+        maxLength: 500
+    },
+    promoCode: {
+        type: String,
+        trim: true,
+        maxLength: 50
+    },
     rating: [{
         type: Number,
         required: false
@@ -71,5 +99,19 @@ const productSchema = new mongoose.Schema({
         required: false
     }]
 }, {timestamps: true});
+
+// Method to check if promotion is currently active
+productSchema.methods.isPromoActive = function() {
+    if (!this.isPromo || !this.promoStartDate || !this.promoEndDate) {
+        return false;
+    }
+    const now = new Date();
+    return now >= this.promoStartDate && now <= this.promoEndDate;
+};
+
+// Method to get the effective price (promo price if active, otherwise regular price)
+productSchema.methods.getEffectivePrice = function() {
+    return this.isPromoActive() && this.promoPrice ? this.promoPrice : this.price;
+};
 
 module.exports = mongoose.model("Product", productSchema);

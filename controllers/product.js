@@ -45,6 +45,25 @@ exports.create = (req, res) => {
             });
         }
 
+        // Validate promotional offer dates
+        if(fields.isPromo === 'true' || fields.isPromo === true) {
+            if (!fields.promoStartDate || !fields.promoEndDate) {
+                return res.status(400).json({
+                    error: "Promotion start and end dates are required when product is on promotion"
+                });
+            }
+            if (!fields.promoPrice) {
+                return res.status(400).json({
+                    error: "Promotional price is required when product is on promotion"
+                });
+            }
+            if (new Date(fields.promoEndDate) <= new Date(fields.promoStartDate)) {
+                return res.status(400).json({
+                    error: "Promotion end date must be after start date"
+                });
+            }
+        }
+
         let product = new Product(fields);
 
         // Image validation
@@ -92,6 +111,25 @@ exports.update = (req, res) => {
             return res.status(400).json({
                 error: "Image could not be uploaded"
             });
+        }
+
+        // Validate promotional offer dates if promotion is enabled
+        if(fields.isPromo === 'true' || fields.isPromo === true) {
+            if (!fields.promoStartDate || !fields.promoEndDate) {
+                return res.status(400).json({
+                    error: "Promotion start and end dates are required when product is on promotion"
+                });
+            }
+            if (!fields.promoPrice) {
+                return res.status(400).json({
+                    error: "Promotional price is required when product is on promotion"
+                });
+            }
+            if (new Date(fields.promoEndDate) <= new Date(fields.promoStartDate)) {
+                return res.status(400).json({
+                    error: "Promotion end date must be after start date"
+                });
+            }
         }
 
         // Accessing the existing product
