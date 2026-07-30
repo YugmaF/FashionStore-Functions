@@ -57,3 +57,114 @@ POST http://localhost:8000/api/products/by/search
 GET http://localhost:8000/api/product/image/5e662c41f4bb243864cb0256
 
 ###
+###Create product with promotional offer
+POST http://localhost:8000/api/product/create/5e6275c5115b7c085c399357
+Content-Type: multipart/form-data; boundary=----WebKitFormBoundary
+
+------WebKitFormBoundary
+Content-Disposition: form-data; name="name"
+
+Summer Sale T-Shirt
+------WebKitFormBoundary
+Content-Disposition: form-data; name="description"
+
+Premium quality cotton t-shirt available at special promotional price
+------WebKitFormBoundary
+Content-Disposition: form-data; name="category"
+
+5e6dd9565fd2043d846a8d11
+------WebKitFormBoundary
+Content-Disposition: form-data; name="price"
+
+49.99
+------WebKitFormBoundary
+Content-Disposition: form-data; name="currency"
+
+USD
+------WebKitFormBoundary
+Content-Disposition: form-data; name="quantity"
+
+100
+------WebKitFormBoundary
+Content-Disposition: form-data; name="takeInMethod"
+
+true
+------WebKitFormBoundary
+Content-Disposition: form-data; name="isPromo"
+
+true
+------WebKitFormBoundary
+Content-Disposition: form-data; name="promoPrice"
+
+29.99
+------WebKitFormBoundary
+Content-Disposition: form-data; name="promoStartDate"
+
+2024-06-01T00:00:00.000Z
+------WebKitFormBoundary
+Content-Disposition: form-data; name="promoEndDate"
+
+2024-06-30T23:59:59.000Z
+------WebKitFormBoundary
+Content-Disposition: form-data; name="promoType"
+
+percentage_discount
+------WebKitFormBoundary
+Content-Disposition: form-data; name="promoDescription"
+
+Summer special! Get 40% off on this premium t-shirt. Limited time offer!
+------WebKitFormBoundary
+Content-Disposition: form-data; name="promoCode"
+
+SUMMER40
+------WebKitFormBoundary
+Content-Disposition: form-data; name="discount"
+
+40
+------WebKitFormBoundary
+Content-Disposition: form-data; name="image"; filename="product.jpg"
+Content-Type: image/jpeg
+
+<@/path/to/product.jpg
+------WebKitFormBoundary--
+
+###
+###Update product with promotional offer
+PUT http://localhost:8000/api/product/5e662c41f4bb243864cb0256/5e6275c5115b7c085c399357
+Content-Type: multipart/form-data; boundary=----WebKitFormBoundary
+
+------WebKitFormBoundary
+Content-Disposition: form-data; name="isPromo"
+
+true
+------WebKitFormBoundary
+Content-Disposition: form-data; name="promoPrice"
+
+19.99
+------WebKitFormBoundary
+Content-Disposition: form-data; name="promoStartDate"
+
+2024-06-01T00:00:00.000Z
+------WebKitFormBoundary
+Content-Disposition: form-data; name="promoEndDate"
+
+2024-07-15T23:59:59.000Z
+------WebKitFormBoundary
+Content-Disposition: form-data; name="promoType"
+
+fixed_price
+------WebKitFormBoundary
+Content-Disposition: form-data; name="promoDescription"
+
+Extended sale! Now available at an incredible fixed price!
+------WebKitFormBoundary
+Content-Disposition: form-data; name="promoCode"
+
+FLASHSALE
+------WebKitFormBoundary
+Content-Disposition: form-data; name="discount"
+
+60
+------WebKitFormBoundary--
+
+###
