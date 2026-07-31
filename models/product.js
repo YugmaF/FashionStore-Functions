@@ -50,6 +50,28 @@ const productSchema = new mongoose.Schema({
         type: Number,
         default: 0.00
     },
+    promotionalOffers: [{
+        offer: {
+            type: ObjectId,
+            ref: 'PromotionalOffer'
+        },
+        appliedAt: {
+            type: Date,
+            default: Date.now
+        }
+    }],
+    activeOffer: {
+        type: ObjectId,
+        ref: 'PromotionalOffer'
+    },
+    discountedPrice: {
+        type: Number,
+        default: 0
+    },
+    hasActiveOffer: {
+        type: Boolean,
+        default: false
+    },
     rating: [{
         type: Number,
         required: false
@@ -71,5 +93,51 @@ const productSchema = new mongoose.Schema({
         required: false
     }]
 }, {timestamps: true});
+
+productSchema.methods.getFinalPrice = function() {
+    if (this.hasActiveOffer && this.activeOffer) {
+        return Math.max(0, this.discountedPrice);
+    }
+    return this.price;
+};
+
+productSchema.methods.applyPromotionalOffer = function(offer) {
+    const PromotionalOffer = mongoose.model('PromotionalOffer');
+    
+    if (!offer || !offer.isActiveNow) {
+        this.hasActiveOffer = false;
+        this.activeOffer = null;
+        this.discountedPrice = this.price;
+        return;
+    }
+
+    const discount = offer.calculateDiscount(this.price);
+    this.discountedPrice = Math.max(0, this.price - discount);
+    this.hasActiveOffer = true;
+    this.activeOffer = offer._id;
+
+    const existingOffer = this.promotionalOffers.find(
+        po => po.offer && po.offer.toString() === offer._id.toString()
+    );
+    
+    if (!existingOffer) {
+        this.promotionalOffers.push({
+            offer: offer._id,
+            appliedAt: new Date()
+        });
+    }
+};
+
+productSchema.methods.removePromotionalOffer = function() {
+    this.hasActiveOffer = false;
+    this.activeOffer = null;
+    this.discountedPrice = this.price;
+};
+
+productSchema.methods.getAppliedOffers = function() {
+    return this.populate('promotionalOffers.offer').then(populated => {
+        return populated.promotionalOffers.map(po => po.offer);
+    });
+};
 
 module.exports = mongoose.model("Product", productSchema);
