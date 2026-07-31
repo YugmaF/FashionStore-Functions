@@ -36,13 +36,88 @@ exports.create = (req, res) => {
         }
 
         // Check for all the variables
-        const {name, description, category, price, currency, quantity, takeInMethod} = fields;
+        const {name, description, category, price, currency, quantity, takeInMethod, promotionalOffer} = fields;
 
         // Validating the variables
         if(!name || !description || !category || !price || !currency || !quantity || !takeInMethod){
             return res.status(400).json({
                 error: "Complete all fields!"
             });
+        }
+
+        // Validate promotional offer if provided
+        if (promotionalOffer) {
+            let parsedPromotionalOffer;
+            try {
+                parsedPromotionalOffer = typeof promotionalOffer === 'string' 
+                    ? JSON.parse(promotionalOffer) 
+                    : promotionalOffer;
+            } catch (e) {
+                parsedPromotionalOffer = promotionalOffer;
+            }
+
+            // Validate required promotional offer fields
+            if (parsedPromotionalOffer.isActive) {
+                if (!parsedPromotionalOffer.discountType || !['percentage', 'fixed'].includes(parsedPromotionalOffer.discountType)) {
+                    return res.status(400).json({
+                        error: "Invalid discount type. Must be 'percentage' or 'fixed'"
+                    });
+                }
+
+                if (!parsedPromotionalOffer.discountValue || parsedPromotionalOffer.discountValue <= 0) {
+                    return res.status(400).json({
+                        error: "Discount value must be greater than 0"
+                    });
+                }
+
+                // Validate dates if provided
+                if (parsedPromotionalOffer.startDate && parsedPromotionalOffer.endDate) {
+                    const startDate = new Date(parsedPromotionalOffer.startDate);
+                    const endDate = new Date(parsedPromotionalOffer.endDate);
+                    
+                    if (endDate <= startDate) {
+                        return res.status(400).json({
+                            error: "End date must be greater than start date"
+                        });
+                    }
+                }
+
+                // Validate percentage discount doesn't exceed 100%
+                if (parsedPromotionalOffer.discountType === 'percentage' && parsedPromotionalOffer.discountValue > 100) {
+                    return res.status(400).json({
+                        error: "Percentage discount cannot exceed 100%"
+                    });
+                }
+
+                // Validate minimum values
+                if (parsedPromotionalOffer.minOrderQuantity && parsedPromotionalOffer.minOrderQuantity < 1) {
+                    return res.status(400).json({
+                        error: "Minimum order quantity must be at least 1"
+                    });
+                }
+
+                if (parsedPromotionalOffer.minOrderValue && parsedPromotionalOffer.minOrderValue < 0) {
+                    return res.status(400).json({
+                        error: "Minimum order value cannot be negative"
+                    });
+                }
+
+                if (parsedPromotionalOffer.maxDiscountCap && parsedPromotionalOffer.maxDiscountCap < 0) {
+                    return res.status(400).json({
+                        error: "Maximum discount cap cannot be negative"
+                    });
+                }
+
+                // Format dates
+                if (parsedPromotionalOffer.startDate) {
+                    parsedPromotionalOffer.startDate = new Date(parsedPromotionalOffer.startDate);
+                }
+                if (parsedPromotionalOffer.endDate) {
+                    parsedPromotionalOffer.endDate = new Date(parsedPromotionalOffer.endDate);
+                }
+
+                fields.promotionalOffer = parsedPromotionalOffer;
+            }
         }
 
         let product = new Product(fields);
@@ -96,6 +171,81 @@ exports.update = (req, res) => {
 
         // Accessing the existing product
         let product = req.product;
+
+        // Validate promotional offer if provided in update
+        if (fields.promotionalOffer) {
+            let parsedPromotionalOffer;
+            try {
+                parsedPromotionalOffer = typeof fields.promotionalOffer === 'string' 
+                    ? JSON.parse(fields.promotionalOffer) 
+                    : fields.promotionalOffer;
+            } catch (e) {
+                parsedPromotionalOffer = fields.promotionalOffer;
+            }
+
+            // Validate promotional offer fields
+            if (parsedPromotionalOffer.isActive) {
+                if (!parsedPromotionalOffer.discountType || !['percentage', 'fixed'].includes(parsedPromotionalOffer.discountType)) {
+                    return res.status(400).json({
+                        error: "Invalid discount type. Must be 'percentage' or 'fixed'"
+                    });
+                }
+
+                if (!parsedPromotionalOffer.discountValue || parsedPromotionalOffer.discountValue < 0) {
+                    return res.status(400).json({
+                        error: "Discount value must be greater than or equal to 0"
+                    });
+                }
+
+                // Validate dates if provided
+                if (parsedPromotionalOffer.startDate && parsedPromotionalOffer.endDate) {
+                    const startDate = new Date(parsedPromotionalOffer.startDate);
+                    const endDate = new Date(parsedPromotionalOffer.endDate);
+                    
+                    if (endDate <= startDate) {
+                        return res.status(400).json({
+                            error: "End date must be greater than start date"
+                        });
+                    }
+                }
+
+                // Validate percentage discount doesn't exceed 100%
+                if (parsedPromotionalOffer.discountType === 'percentage' && parsedPromotionalOffer.discountValue > 100) {
+                    return res.status(400).json({
+                        error: "Percentage discount cannot exceed 100%"
+                    });
+                }
+
+                // Validate minimum values
+                if (parsedPromotionalOffer.minOrderQuantity && parsedPromotionalOffer.minOrderQuantity < 1) {
+                    return res.status(400).json({
+                        error: "Minimum order quantity must be at least 1"
+                    });
+                }
+
+                if (parsedPromotionalOffer.minOrderValue && parsedPromotionalOffer.minOrderValue < 0) {
+                    return res.status(400).json({
+                        error: "Minimum order value cannot be negative"
+                    });
+                }
+
+                if (parsedPromotionalOffer.maxDiscountCap && parsedPromotionalOffer.maxDiscountCap < 0) {
+                    return res.status(400).json({
+                        error: "Maximum discount cap cannot be negative"
+                    });
+                }
+
+                // Format dates
+                if (parsedPromotionalOffer.startDate) {
+                    parsedPromotionalOffer.startDate = new Date(parsedPromotionalOffer.startDate);
+                }
+                if (parsedPromotionalOffer.endDate) {
+                    parsedPromotionalOffer.endDate = new Date(parsedPromotionalOffer.endDate);
+                }
+
+                fields.promotionalOffer = parsedPromotionalOffer;
+            }
+        }
 
         // Replace existing Product info
         product = lodash.extend(product, fields);
@@ -345,4 +495,120 @@ exports.searchProduct = (req, res) => {
             res.json(products);
         }).select('-image');
     }
+};
+
+// Get products with active promotions
+exports.getPromotionalProducts = (req, res) => {
+    const now = new Date();
+    
+    Product.find({
+        'promotionalOffer.isActive': true,
+        $or: [
+            { 'promotionalOffer.startDate': { $lte: now } },
+            { 'promotionalOffer.startDate': null }
+        ],
+        $or: [
+            { 'promotionalOffer.endDate': { $gte: now } },
+            { 'promotionalOffer.endDate': null }
+        ]
+    })
+    .select("-image")
+    .populate('category')
+    .sort({ 'promotionalOffer.discountValue': -1 })
+    .exec((err, data) => {
+        if(err){
+            res.status(400).json({
+               error: 'Promotional products not found!'
+            });
+        }
+
+        res.json(data);
+    });
+};
+
+// Get products with highest discounts (flash sales)
+exports.getFlashSaleProducts = (req, res) => {
+    const limitTo = req.query.limitTo ? parseInt(req.query.limitTo) : 10;
+    const now = new Date();
+    
+    Product.find({
+        'promotionalOffer.isActive': true,
+        $or: [
+            { 'promotionalOffer.startDate': { $lte: now } },
+            { 'promotionalOffer.startDate': null }
+        ],
+        $or: [
+            { 'promotionalOffer.endDate': { $gte: now } },
+            { 'promotionalOffer.endDate': null }
+        ]
+    })
+    .select("-image")
+    .populate('category')
+    .sort({ 'promotionalOffer.discountValue': -1 })
+    .limit(limitTo)
+    .exec((err, data) => {
+        if(err){
+            res.status(400).json({
+               error: 'Flash sale products not found!'
+            });
+        }
+
+        res.json(data);
+    });
+};
+
+// Validate promotional offer for a product
+exports.validatePromotionalOffer = (req, res) => {
+    const product = req.product;
+    const { quantity } = req.body;
+
+    if (!product.promotionalOffer || !product.promotionalOffer.isActive) {
+        return res.json({
+            isValid: false,
+            message: "No active promotional offer for this product"
+        });
+    }
+
+    const isPromotionActive = product.isPromotionActive();
+    
+    if (!isPromotionActive) {
+        return res.json({
+            isValid: false,
+            message: "Promotional offer is not currently active or expired"
+        });
+    }
+
+    // Check minimum order quantity
+    const minQty = product.promotionalOffer.minOrderQuantity || 1;
+    if (quantity && quantity < minQty) {
+        return res.json({
+            isValid: false,
+            message: `Minimum order quantity is ${minQty}`,
+            requiredQuantity: minQty
+        });
+    }
+
+    // Check minimum order value
+    if (product.promotionalOffer.minOrderValue > 0) {
+        const totalValue = product.price * (quantity || 1);
+        if (totalValue < product.promotionalOffer.minOrderValue) {
+            return res.json({
+                isValid: false,
+                message: `Minimum order value is ${product.promotionalOffer.minOrderValue}`,
+                requiredValue: product.promotionalOffer.minOrderValue
+            });
+        }
+    }
+
+    const discountAmount = product.calculateDiscountAmount(quantity || 1);
+    const finalPrice = Math.max(0, product.price * (quantity || 1) - discountAmount);
+
+    return res.json({
+        isValid: true,
+        message: "Promotional offer is valid",
+        discountAmount,
+        originalPrice: product.price * (quantity || 1),
+        finalPrice,
+        promotionalOffer: product.promotionalOffer
+    });
 };

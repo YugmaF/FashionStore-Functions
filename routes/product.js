@@ -4,7 +4,7 @@ const {userSignupValidator} = require('../validators');
 
 //controller references
 const { create, getProductById, read, remove, update, addRating, addComment
-    , getAllProducts, getSimilarProduct, getProductCategories, getProductListBySearch, getImage, getProductsByCategory, searchProduct } = require("../controllers/product");
+    , getAllProducts, getSimilarProduct, getProductCategories, getProductListBySearch, getImage, getProductsByCategory, searchProduct, getPromotionalProducts, getFlashSaleProducts, validatePromotionalOffer } = require("../controllers/product");
 const { requiredSignin, isAuth, isAdmin, isStoreManager } = require('../controllers/auth');
 const { getUserById } = require("../controllers/user");
 //controller references
@@ -26,6 +26,11 @@ router.get('/products/similar/:productId', getSimilarProduct);
 router.get('/products/categories', getProductCategories);
 router.post("/products/by/search", getProductListBySearch);
 router.get('/product/image/:productId', getImage);
+
+//promotional offer routes
+router.get('/products/promotional', getPromotionalProducts);
+router.get('/products/flash-sale', getFlashSaleProducts);
+router.get('/product/:productId/validate-promotion', validatePromotionalOffer);
 
 
 //read by
