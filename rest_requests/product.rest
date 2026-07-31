@@ -57,3 +57,127 @@ POST http://localhost:8000/api/products/by/search
 GET http://localhost:8000/api/product/image/5e662c41f4bb243864cb0256
 
 ###
+
+### Create Product with Promotional Offer (Percentage Discount)
+POST http://localhost:8000/api/product/create/5e6275c5115b7c085c399357
+Content-Type: multipart/form-data; boundary=----WebKitFormBoundary7MA4YWxkTrZu0gW
+Authorization: Bearer YOUR_TOKEN_HERE
+
+------WebKitFormBoundary7MA4YWxkTrZu0gW
+Content-Disposition: form-data; name="name"
+
+Summer Sale T-Shirt
+------WebKitFormBoundary7MA4YWxkTrZu0gW
+Content-Disposition: form-data; name="description"
+
+Comfortable cotton t-shirt with special summer discount
+------WebKitFormBoundary7MA4YWxkTrZu0gW
+Content-Disposition: form-data; name="category"
+
+5e6dd9565fd2043d846a8d11
+------WebKitFormBoundary7MA4YWxkTrZu0gW
+Content-Disposition: form-data; name="price"
+
+49.99
+------WebKitFormBoundary7MA4YWxkTrZu0gW
+Content-Disposition: form-data; name="currency"
+
+USD
+------WebKitFormBoundary7MA4YWxkTrZu0gW
+Content-Disposition: form-data; name="quantity"
+
+100
+------WebKitFormBoundary7MA4YWxkTrZu0gW
+Content-Disposition: form-data; name="takeInMethod"
+
+true
+------WebKitFormBoundary7MA4YWxkTrZu0gW
+Content-Disposition: form-data; name="promotionalOffer"
+
+{
+  "isActive": true,
+  "discountType": "percentage",
+  "discountValue": 20,
+  "startDate": "2024-01-01T00:00:00.000Z",
+  "endDate": "2024-12-31T23:59:59.000Z",
+  "minOrderQuantity": 1,
+  "minOrderValue": 0,
+  "maxDiscountCap": 50,
+  "description": "Summer Sale - 20% off!"
+}
+------WebKitFormBoundary7MA4YWxkTrZu0gW
+Content-Disposition: form-data; name="image"; filename="product.jpg"
+Content-Type: image/jpeg
+
+<PATH_TO_IMAGE>
+------WebKitFormBoundary7MA4YWxkTrZu0gW--
+
+###
+
+### Create Product with Fixed Amount Discount
+POST http://localhost:8000/api/product/create/5e6275c5115b7c085c399357
+Content-Type: application/json
+Authorization: Bearer YOUR_TOKEN_HERE
+
+{
+  "name": "Winter Jacket",
+  "description": "Warm winter jacket with fixed discount",
+  "category": "5e6dd9565fd2043d846a8d11",
+  "price": 199.99,
+  "currency": "USD",
+  "quantity": 50,
+  "takeInMethod": true,
+  "promotionalOffer": {
+    "isActive": true,
+    "discountType": "fixed",
+    "discountValue": 30,
+    "startDate": "2024-01-01T00:00:00.000Z",
+    "endDate": "2024-03-31T23:59:59.000Z",
+    "minOrderQuantity": 1,
+    "minOrderValue": 0,
+    "description": "Winter special - $30 off!"
+  }
+}
+
+###
+
+### Update Product Promotional Offer
+PUT http://localhost:8000/api/product/5e662c41f4bb243864cb0256/5e6275c5115b7c085c399357
+Content-Type: application/json
+Authorization: Bearer YOUR_TOKEN_HERE
+
+{
+  "promotionalOffer": {
+    "isActive": true,
+    "discountType": "percentage",
+    "discountValue": 25,
+    "startDate": "2024-01-01T00:00:00.000Z",
+    "endDate": "2024-06-30T23:59:59.000Z",
+    "minOrderQuantity": 2,
+    "minOrderValue": 100,
+    "maxDiscountCap": 75,
+    "description": "Bulk discount - buy 2 or more!"
+  }
+}
+
+###
+
+### Get All Products with Active Promotions
+GET http://localhost:8000/api/products/promotional
+
+###
+
+### Get Flash Sale Products (Top discounted items)
+GET http://localhost:8000/api/products/flash-sale?limitTo=10
+
+###
+
+### Validate Promotional Offer for a Product
+POST http://localhost:8000/api/product/5e662c41f4bb243864cb0256/validate-promotion
+Content-Type: application/json
+
+{
+  "quantity": 3
+}
+
+###
