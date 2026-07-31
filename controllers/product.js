@@ -1,6 +1,7 @@
 const formidable = require('formidable');
 const lodash = require('lodash');
 const Product = require('../models/product');
+const PromotionalOffer = require('../models/promotionalOffer');
 const fs = require('fs');
 const {errorHandler} = require('../helpers/dbErrorHandler');
 
@@ -36,7 +37,7 @@ exports.create = (req, res) => {
         }
 
         // Check for all the variables
-        const {name, description, category, price, currency, quantity, takeInMethod} = fields;
+        const {name, description, category, price, currency, quantity, takeInMethod, promotionalOfferId} = fields;
 
         // Validating the variables
         if(!name || !description || !category || !price || !currency || !quantity || !takeInMethod){
