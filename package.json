@@ -5,7 +5,9 @@
   "main": "index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "start": "nodemon app.js"
+    "start": "nodemon app.js",
+    "start:local": "MONGO_URI=mongodb://127.0.0.1:27017/fashionstore nodemon app.js",
+    "seed:local": "node scripts/seed.js"
   },
   "author": "Yugma Fernando",
   "license": "ISC",
