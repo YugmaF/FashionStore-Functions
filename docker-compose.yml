@@ -1,0 +1,16 @@
+services:
+  mongo:
+    image: mongo:4.4.29
+    container_name: fashion-store-mongo
+    ports:
+      - "27017:27017"
+    volumes:
+      - fashion-store-mongo-data:/data/db
+    healthcheck:
+      test: ["CMD", "mongo", "--quiet", "--eval", "db.adminCommand('ping').ok"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+volumes:
+  fashion-store-mongo-data:

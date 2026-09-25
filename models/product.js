@@ -48,7 +48,23 @@ const productSchema = new mongoose.Schema({
     },
     discount:{
         type: Number,
-        default: 0.00
+        default: 0.00,
+        min: 0,
+        max: 100
+    },
+    promotionTitle: {
+        type: String,
+        trim: true,
+        maxlength: 80,
+        default: ''
+    },
+    promotionStart: {
+        type: Date,
+        default: null
+    },
+    promotionEnd: {
+        type: Date,
+        default: null
     },
     rating: [{
         type: Number,

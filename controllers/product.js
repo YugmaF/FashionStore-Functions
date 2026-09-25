@@ -4,6 +4,39 @@ const Product = require('../models/product');
 const fs = require('fs');
 const {errorHandler} = require('../helpers/dbErrorHandler');
 
+const preparePromotionFields = fields => {
+    ['promotionStart', 'promotionEnd'].forEach(field => {
+        if (Object.prototype.hasOwnProperty.call(fields, field) && !fields[field]) {
+            fields[field] = null;
+        }
+    });
+
+    if (Object.prototype.hasOwnProperty.call(fields, 'discount')) {
+        fields.discount = Number(fields.discount);
+    }
+};
+
+const validatePromotionFields = fields => {
+    if (Object.prototype.hasOwnProperty.call(fields, 'discount')
+        && (!Number.isFinite(fields.discount) || fields.discount < 0 || fields.discount > 100)) {
+        return 'Discount must be between 0 and 100';
+    }
+
+    const promotionStart = fields.promotionStart ? new Date(fields.promotionStart) : null;
+    const promotionEnd = fields.promotionEnd ? new Date(fields.promotionEnd) : null;
+
+    if ((promotionStart && Number.isNaN(promotionStart.getTime()))
+        || (promotionEnd && Number.isNaN(promotionEnd.getTime()))) {
+        return 'Promotion dates must be valid dates';
+    }
+
+    if (promotionStart && promotionEnd && promotionEnd < promotionStart) {
+        return 'Promotion end date must be after the start date';
+    }
+
+    return null;
+};
+
 //get product by Id
 exports.getProductById = (req, res, next, id) => {
     Product.findById(id).populate('category').populate('comments.user').exec((err, product) => {
@@ -43,6 +76,12 @@ exports.create = (req, res) => {
             return res.status(400).json({
                 error: "Complete all fields!"
             });
+        }
+
+        preparePromotionFields(fields);
+        const promotionError = validatePromotionFields(fields);
+        if (promotionError) {
+            return res.status(400).json({error: promotionError});
         }
 
         let product = new Product(fields);
@@ -97,8 +136,22 @@ exports.update = (req, res) => {
         // Accessing the existing product
         let product = req.product;
 
+        preparePromotionFields(fields);
+        const promotionError = validatePromotionFields(fields);
+        if (promotionError) {
+            return res.status(400).json({error: promotionError});
+        }
+
         // Replace existing Product info
         product = lodash.extend(product, fields);
+
+        const promotionDatesError = validatePromotionFields({
+            promotionStart: product.promotionStart,
+            promotionEnd: product.promotionEnd
+        });
+        if (promotionDatesError) {
+            return res.status(400).json({error: promotionDatesError});
+        }
 
         // Image validation
         if(files.image){
@@ -193,6 +246,47 @@ exports.getAllProducts = (req, res) => {
 
           res.json(data);
       });
+};
+
+exports.getPromotionalOffers = (req, res) => {
+    const requestedLimit = parseInt(req.query.limitTo, 10);
+    const limitTo = Number.isInteger(requestedLimit) && requestedLimit > 0
+        ? Math.min(requestedLimit, 100)
+        : 12;
+    const now = new Date();
+
+    Product.find({
+        discount: {$gt: 0},
+        $and: [
+            {
+                $or: [
+                    {promotionStart: null},
+                    {promotionStart: {$exists: false}},
+                    {promotionStart: {$lte: now}}
+                ]
+            },
+            {
+                $or: [
+                    {promotionEnd: null},
+                    {promotionEnd: {$exists: false}},
+                    {promotionEnd: {$gte: now}}
+                ]
+            }
+        ]
+    })
+        .select("-image")
+        .populate('category')
+        .sort([['discount', 'DESC'], ['promotionEnd', 'ASC']])
+        .limit(limitTo)
+        .exec((err, data) => {
+            if (err) {
+                return res.status(400).json({
+                    error: 'Promotional offers not found'
+                });
+            }
+
+            res.json(data);
+        });
 };
 
 //get similar product
