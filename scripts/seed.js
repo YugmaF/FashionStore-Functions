@@ -1,8 +1,11 @@
 const mongoose = require('mongoose');
 const Category = require('../models/category');
 const Product = require('../models/product');
+const User = require('../models/users');
 
 const mongoUri = process.env.LOCAL_MONGO_URI || 'mongodb://127.0.0.1:27017/fashionstore';
+const localAdminEmail = process.env.LOCAL_ADMIN_EMAIL || 'admin@fashionstore.local';
+const localAdminPassword = process.env.LOCAL_ADMIN_PASSWORD || 'LocalAdmin123!';
 
 const createImage = (label, background) => {
     const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="900" height="1100">
@@ -172,7 +175,19 @@ const seed = async () => {
         );
     }
 
-    console.log(`Seeded ${categoryNames.length} categories and ${catalog.length} products`);
+    let localAdmin = await User.findOne({email: localAdminEmail});
+    if (!localAdmin) {
+        localAdmin = new User({
+            name: 'Local Store Admin',
+            email: localAdminEmail
+        });
+    }
+    localAdmin.password = localAdminPassword;
+    localAdmin.role = '1';
+    localAdmin.state = '1';
+    await localAdmin.save();
+
+    console.log(`Seeded ${categoryNames.length} categories, ${catalog.length} products, and local admin ${localAdminEmail}`);
 };
 
 seed()
