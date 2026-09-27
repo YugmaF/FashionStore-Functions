@@ -9,7 +9,17 @@ const Handlebars = require('handlebars');
 const lodash = require('lodash');
 
 exports.signup = (req, res) => {
-    const user = new User(req.body);
+    const userDetails = {
+        name: req.body.name,
+        email: req.body.email,
+        password: req.body.password
+    };
+
+    if (req.auth && req.profile) {
+        userDetails.role = req.body.role;
+    }
+
+    const user = new User(userDetails);
     user.save((err, user) => {
         if (err) {
             return res.status(400).json({error: errorHandler(err)});
@@ -20,7 +30,7 @@ exports.signup = (req, res) => {
             user
         });
 
-        if (typeof req.body.role !== 'undefined' && req.body.role === 2) {
+        if (user.role === "2") {
             let transporter = nodemailer.createTransport({
                 service: 'gmail',
                 auth: {
